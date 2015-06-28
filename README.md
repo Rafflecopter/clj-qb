@@ -1,14 +1,23 @@
 # qb
 
-A Clojure library designed to ... well, that part is up to you.
+A Message Queue and Work Queue interface for clojure apps.
+
+```
+[com.rafflecopter "0.1.0"]
+```
 
 ## Usage
 
-FIXME
+```clojure
+(require '[qb.core :as qb]
+         'qb.impl.relyq)
+         ; from https://github.com/Rafflecopter/clj-relyq
+
+(let [q (qb/init {:type :relyq :other :stuff})
+      received-msgs (qb/listen q "source")]
+    (qb/send! q "destination" {:message :stuff}))
+```
 
 ## License
 
-Copyright © 2015 FIXME
-
-Distributed under the Eclipse Public License either version 1.0 or (at
-your option) any later version.
+See [LICENSE](https://github.com/Rafflecopter/clj-qb/blob/master/LICENSE) file
