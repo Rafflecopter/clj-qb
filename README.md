@@ -2,15 +2,9 @@
 
 A Message Queue and Work Queue interface for clojure apps.
 
-```
-[com.rafflecopter/qb "0.1.0"]
-```
-
 qb is only an interface, so you'll need to include one of the following qb-compatible implementations:
 
-```
-[com.rafflecopter/relyq "0.1.0"]
-```
+- [relyq](https://github.com/Rafflecopter/clj-relyq)
 
 ## Usage
 
