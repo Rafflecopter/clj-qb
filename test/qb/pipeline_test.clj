@@ -27,6 +27,7 @@
     (>!! c {:msg "ghi" :one true :two true})
     (fact "result channel should be closed"
       (pull!! rc) => nil)
+    (<!! (async/timeout 50))
     (fact "calls to TestSender are correct"
       (get-calls)
       => #{{:dest "one" :msg "abc"}
