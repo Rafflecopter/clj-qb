@@ -56,6 +56,7 @@
           (if (:result msg1)
             (success (:result msg1))
             (:result msg1) => some?)
+          (<!! (async/timeout 50))
           @call => {:op :success :msg {:n 1}})))
     (fact "second message out"
       (let [msg2 (take! out)]
@@ -66,4 +67,5 @@
           (if (:result msg2)
             (error (:result msg2) {:ya "know"})
             (:result msg2) => some?)
+          (<!! (async/timeout 50))
           @call => {:op :error :msg {:n 2} :error {:ya "know"}})))))
