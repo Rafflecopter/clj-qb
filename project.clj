@@ -3,6 +3,9 @@
   :url "https://github.com/Rafflecopter/clj-qb"
   :license {:name "MIT"
             :url "https://github.com/Rafflecopter/clj-qb/blob/master/LICENSE"}
+  :scm {:name "git"
+        :url "https://github.com/Rafflecopter/clj-qb"}
+  :deploy-repositories [["clojars" {:creds :gpg}]]
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [org.clojure/core.async "0.1.346.0-17112a-alpha"]]
   :profiles {:dev {:dependencies [[midje "1.6.3"]]
