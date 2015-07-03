@@ -11,7 +11,7 @@
                :default :na))
 
 (defn blocking-testfn [c]
-  (let [t (async/timeout 50)]
+  (let [t (async/timeout 25)]
     (async/alt!! c ([v] v)
                  t ([_] nil))))
 
@@ -30,6 +30,7 @@
       (take! data) => :na)
     (fact "can put another value on input chan"
       (put! c 11) => :wrote)
+    (<!! (async/timeout 50))
     (fact "stop channel still empty"
       (take! stop) => :na)
     (close! stop)
@@ -46,7 +47,7 @@
                                                #(reset! call {:op :error :msg %1 :error %2}))))]
     (>!! in {:n 1}) (>!! in {:n 2})
     (fact "first message out"
-      (let [msg1 (take! out)]
+      (let [msg1 (<!! out)]
         (fact "message is wrapped"
           msg1 => (contains {:msg {:n 1}}))
         (fact "success causes success call"
@@ -57,7 +58,7 @@
           (<!! (async/timeout 50))
           @call => {:op :success :msg {:n 1}})))
     (fact "second message out"
-      (let [msg2 (take! out)]
+      (let [msg2 (<!! out)]
         (fact "message is wrapped"
           msg2 => (contains {:msg {:n 2}}))
         (fact "error causes error call"
