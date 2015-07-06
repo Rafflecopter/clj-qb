@@ -19,18 +19,23 @@
                  t ([_] :timeout))))
 
 (facts "about mux-senders"
-  (let [c (mux-senders [{:sender (TestSender.) :dest-fn (fn [_] "one") :filter-fn :one}
-                        {:sender (TestSender.) :dest-fn (fn [_] "two") :filter-fn :two}])
+  (let [c (mux-senders [{:sender (TestSender.)
+                         :dest-fn (fn [_] "one")
+                         :filter-fn :one}
+                        {:sender (TestSender.)
+                         :dest-fn (fn [_] "two")
+                         :filter-fn :two
+                         :map-fn #(assoc % :hello "world")}])
         rc (qbu/result-chan)]
-    (>!! c {:msg "abc" :one true})
-    (>!! c {:msg "def" :two true :result rc})
-    (>!! c {:msg "ghi" :one true :two true})
+    (>!! c {:msg {:text "abc"} :one true})
+    (>!! c {:msg {:text "def"} :two true :result rc})
+    (>!! c {:msg {:text "ghi"} :one true :two true})
     (fact "result channel should be closed"
       (pull!! rc) => nil)
     (<!! (async/timeout 50))
     (fact "calls to TestSender are correct"
       (get-calls)
-      => #{{:dest "one" :msg "abc"}
-           {:dest "one" :msg "ghi"}
-           {:dest "two" :msg "def"}
-           {:dest "two" :msg "ghi"}})))
+      => #{{:dest "one" :msg {:text "abc"}}
+           {:dest "one" :msg {:text "ghi"}}
+           {:dest "two" :msg {:hello "world" :text "def"}}
+           {:dest "two" :msg {:hello "world" :text "ghi"}}})))
