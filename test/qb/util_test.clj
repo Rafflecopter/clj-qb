@@ -3,14 +3,14 @@
             [qb.util :refer :all]
             [clojure.core.async :refer (<!! >!! chan close! alt!! pipe) :as async]))
 
-(defn take! [c]
+(defn- take! [c]
   (async/alt!! c ([v] v)
                :default :na))
-(defn put! [c v]
+(defn- put! [c v]
   (async/alt!! [[c v]] :wrote
                :default :na))
 
-(defn blocking-testfn [c]
+(defn- blocking-testfn [c]
   (let [t (async/timeout 25)]
     (async/alt!! c ([v] v)
                  t ([_] nil))))
@@ -39,32 +39,32 @@
     (fact "now data chan is closed after stop is closed"
       (<!! data) => nil)))
 
-(facts "about result-chan"
+(facts "about ack-chan"
   (let [call (atom nil)
         in (chan 2)
         out (pipe in
-                  (chan 1 (wrap-result-chan-xf #(reset! call {:op :success :msg %})
-                                               #(reset! call {:op :error :msg %1 :error %2}))))]
+                  (chan 1 (wrap-ack-chan-xf #(reset! call {:op :success :msg %})
+                                            #(reset! call {:op :error :msg %1 :error %2}))))]
     (>!! in {:n 1}) (>!! in {:n 2})
     (fact "first message out"
       (let [msg1 (<!! out)]
         (fact "message is wrapped"
           msg1 => (contains {:msg {:n 1}}))
-        (fact "success causes success call"
+        (fact "ack-success causes on-success call"
           @call => nil
-          (if (:result msg1)
-            (success (:result msg1))
-            (:result msg1) => some?)
+          (if (:ack msg1)
+            (ack-success (:ack msg1))
+            (:ack msg1) => some?)
           (<!! (async/timeout 50))
           @call => {:op :success :msg {:n 1}})))
     (fact "second message out"
       (let [msg2 (<!! out)]
         (fact "message is wrapped"
           msg2 => (contains {:msg {:n 2}}))
-        (fact "error causes error call"
+        (fact "nack-error causes on-error call"
           (reset! call nil)
-          (if (:result msg2)
-            (error (:result msg2) {:ya "know"})
-            (:result msg2) => some?)
+          (if (:ack msg2)
+            (nack-error (:ack msg2) {:ya "know"})
+            (:ack msg2) => some?)
           (<!! (async/timeout 50))
           @call => {:op :error :msg {:n 2} :error {:ya "know"}})))))

@@ -1,4 +1,4 @@
-(defproject com.rafflecopter/qb "0.1.1"
+(defproject com.rafflecopter/qb "0.2.0-SNAPSHOT"
   :description "Queue interface and helpers"
   :url "https://github.com/Rafflecopter/clj-qb"
   :license {:name "MIT"

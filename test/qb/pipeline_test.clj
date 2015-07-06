@@ -1,9 +1,8 @@
 (ns qb.pipeline-test
   (:require [midje.sweet :refer :all]
             [clojure.core.async :refer (<!! >!!) :as async]
-            [qb.core :as qb]
-            [qb.util :as qbu]
-            [qb.pipeline :refer (mux-senders)]))
+            [qb.core :as qb :refer (send-chan)]
+            [qb.util :refer (ack-chan ack-success)]))
 
 (def calls (atom #{}))
 (defn get-calls [] (let [c @calls] (reset! calls #{}) c))
@@ -18,24 +17,15 @@
     (async/alt!! c ([v] v)
                  t ([_] :timeout))))
 
-(facts "about mux-senders"
-  (let [c (mux-senders [{:sender (TestSender.)
-                         :dest-fn (fn [_] "one")
-                         :filter-fn :one}
-                        {:sender (TestSender.)
-                         :dest-fn (fn [_] "two")
-                         :filter-fn :two
-                         :map-fn #(assoc % :hello "world")}])
-        rc (qbu/result-chan)]
-    (>!! c {:msg {:text "abc"} :one true})
-    (>!! c {:msg {:text "def"} :two true :result rc})
-    (>!! c {:msg {:text "ghi"} :one true :two true})
-    (fact "result channel should be closed"
-      (pull!! rc) => nil)
+(facts "about send-chan"
+  (let [{:keys [items done]} (send-chan (TestSender.) "mydest")
+        ack (ack-chan)]
+    (>!! items {:text "abc"})
+    (>!! items {:msg {:text "def"} :ack ack})
+    (fact "ack channel should be closed"
+      (pull!! ack) => nil)
     (<!! (async/timeout 50))
     (fact "calls to TestSender are correct"
       (get-calls)
-      => #{{:dest "one" :msg {:text "abc"}}
-           {:dest "one" :msg {:text "ghi"}}
-           {:dest "two" :msg {:hello "world" :text "def"}}
-           {:dest "two" :msg {:hello "world" :text "ghi"}}})))
+      => #{{:dest "mydest" :msg {:text "abc"}}
+           {:dest "mydest" :msg {:text "def"}}})))
