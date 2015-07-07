@@ -40,6 +40,7 @@ When everything is in a piped channels, graceful shutdown becomes easy to do. Cl
                   (<!! done)))))
 ```
 
+**NOTE**: `.addShutdownHook` does not work properly when running with `lein run`, use `lein trampoline run` or an uberjar to work properly.
 
 ## Writing implementations
 
