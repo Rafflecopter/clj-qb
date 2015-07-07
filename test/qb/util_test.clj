@@ -68,3 +68,15 @@
             (:ack msg2) => some?)
           (<!! (async/timeout 50))
           @call => {:op :error :msg {:n 2} :error {:ya "know"}})))))
+
+(facts "about ack-blocking-op"
+  (facts "when no error"
+    (let [ack (ack-blocking-op* (<!! (async/timeout 10)))]
+      (fact "ack succeeds" (<!! ack) => nil)))
+  (facts "with passed in ack"
+    (let [ack (ack-chan)]
+      (ack-blocking-op ack (<!! (async/timeout 10)))
+      (fact "ack succeeds" (<!! ack) => nil)))
+  (facts "with throw"
+    (let [ack (ack-blocking-op* (<!! (async/timeout 10)) (throw (Exception. "yo mama")))]
+      (fact "ack errors" (<!! ack) => {:error "yo mama"}))))

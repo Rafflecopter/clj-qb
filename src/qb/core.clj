@@ -29,9 +29,10 @@
 
 (defn- const [obj] (fn [& _] obj))
 
-(defn- send-chan-exec [sender dest-fn {:keys [msg ack] :as item} done]
+(defn- send-chan-exec [sender dest-fn ?map-fn {:keys [msg ack] :as item} done]
   (let [msg (if (and ack msg) msg item)
         dest (dest-fn msg)
+        msg (if ?map-fn (?map-fn msg) msg)
         s-ack (send! sender dest msg)
         s-ack-mult (async/mult s-ack)]
     (if ack (async/tap s-ack-mult ack))
@@ -39,17 +40,17 @@
 
 (defn send-chan
   "Wrap a sender with a channel of messages to send.
-  Returns {:items items :done done}
-  items is a channel that should have items of a msg or {:msg msg :ack ack-chan}
+  Returns {:data data :done done}
+  data is a channel that should have data of a msg or {:msg msg :ack ack-chan}
   put on it.
-  done is a channel that will be closed when items is closed an all ack-chans
+  done is a channel that will be closed when data is closed an all ack-chans
   returned by send! have closed.
-  dest is either a destination or a function of a message that
-  returns a destination.
+  dest is either a destination or a function of msg that returns a destination.
+  Optionally, if a map-fn is supplied, it will be applied to msg before sending.
   If an item contains an ack-chan, it will be connected with send!'s returned ack-chan."
-  [^qb.core.Sender sender dest]
-  (let [dest-fn (if (fn? dest) dest (const dest))
-        items (chan)
+  [^qb.core.Sender sender & {:keys [dest dest-fn map-fn]}]
+  (let [dest-fn (or dest-fn (const dest))
+        data (chan)
         done (chan 1 (filter (fn [_] false)))]
-    (async/pipeline-async 100 done (partial send-chan-exec sender dest-fn) items)
-    {:items items :done done}))
+    (async/pipeline-async 100 done (partial send-chan-exec sender dest-fn map-fn) data)
+    {:data data :done done}))

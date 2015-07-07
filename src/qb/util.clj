@@ -29,6 +29,22 @@
             (on-success msg)))
       {:ack ackc :msg msg}))))
 
+(defmacro ack-blocking-op
+  "Wrap a blocking operation in a try/catch
+  Acknowledge the ack-chan with success or failure"
+  [ack & op]
+  `(try ~@op
+        (ack-success ~ack)
+     (catch Exception e#
+       (nack-error ~ack {:error (.getMessage e#)}))))
+
+(defmacro ack-blocking-op*
+  "Create an ack-chan and perform ack-blocking-op*"
+  [& op]
+  `(let [ack# (ack-chan)]
+    (ack-blocking-op ack# ~@op)
+    ack#))
+
 ;; Creating data channels from repeated blocking calls
 
 (defn blocking-listener
