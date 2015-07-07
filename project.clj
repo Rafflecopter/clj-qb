@@ -6,6 +6,12 @@
   :scm {:name "git"
         :url "https://github.com/Rafflecopter/clj-qb"}
   :deploy-repositories [["clojars" {:creds :gpg}]]
+  :release-tasks [["vcs" "assert-committed"]
+                  ["change" "version"
+                   "leiningen.release/bump-version" "release"]
+                  ["vcs" "commit"]
+                  ["vcs" "tag"]
+                  ["deploy" "clojars"]]
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [org.clojure/core.async "0.1.346.0-17112a-alpha"]]
   :profiles {:dev {:dependencies [[midje "1.6.3"]]
