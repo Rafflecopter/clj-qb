@@ -36,7 +36,8 @@
         s-ack (send! sender dest msg)
         s-ack-mult (async/mult s-ack)]
     (if ack (async/tap s-ack-mult ack))
-    (async/tap s-ack-mult done)))
+    (async/tap s-ack-mult done)
+    (async/close! done)))
 
 (defn send-chan
   "Wrap a sender with a channel of messages to send.
