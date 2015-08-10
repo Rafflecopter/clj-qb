@@ -17,6 +17,14 @@
   (if (instance? ManyToManyChannel ackc)
     (go (>! ackc err) (close! ackc))))
 
+;; pipes an ack chan to possibly many other ack chans
+
+(defn pipe-ack [from & tos]
+  (go-loop []
+    (let [v (<! from)]
+      (if v (do (doseq [to tos] (>! to v)) (recur))
+            (doseq [to tos] (close! to))))))
+
 (defn wrap-ack-chan-xf
   "Create an xform that can be used to map a channel of messages
   to a channel of {:ack ack-chan :msg msg}.
