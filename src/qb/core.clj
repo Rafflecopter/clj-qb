@@ -1,5 +1,6 @@
 (ns qb.core
-  (:require [clojure.core.async :refer (chan) :as async]))
+  (:require [clojure.core.async :refer (chan) :as async]
+            [qb.util :refer [pipe-ack]]))
 
 (defmulti init!
   "Initialize using a config object.
@@ -27,16 +28,13 @@
 
 ;; Helpers for applications
 
-(defn- const [obj] (fn [& _] obj))
-
 (defn- send-chan-exec [sender dest-fn ?map-fn {:keys [msg ack] :as item} done]
   (let [msg (if (and ack msg) msg item)
         dest (dest-fn msg)
         msg (if ?map-fn (?map-fn msg) msg)
         s-ack (send! sender dest msg)
         s-ack-mult (async/mult s-ack)]
-    (if ack (async/tap s-ack-mult ack))
-    (async/tap s-ack-mult done)))
+    (apply pipe-ack s-ack (if ack [ack done] [done]))))
 
 (defn send-chan
   "Wrap a sender with a channel of messages to send.
@@ -49,7 +47,7 @@
   Optionally, if a map-fn is supplied, it will be applied to msg before sending.
   If an item contains an ack-chan, it will be connected with send!'s returned ack-chan."
   [^qb.core.Sender sender & {:keys [dest dest-fn map-fn]}]
-  (let [dest-fn (or dest-fn (const dest))
+  (let [dest-fn (or dest-fn (fn [_] dest))
         data (chan)
         done (chan 1 (filter (fn [_] false)))]
     (async/pipeline-async 100 done (partial send-chan-exec sender dest-fn map-fn) data)

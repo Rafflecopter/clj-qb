@@ -80,3 +80,36 @@
   (facts "with throw"
     (let [ack (ack-blocking-op* (<!! (async/timeout 10)) (throw (Exception. "yo mama")))]
       (fact "ack errors" (<!! ack) => {:error "yo mama"}))))
+
+(facts "about pipe-ack"
+  (fact "no tos means just empty the ack"
+    (let [ack (ack-chan)]
+      (nack-error ack "error")
+      (pipe-ack ack)
+      (<!! (async/timeout 10))
+      (<!! ack) => nil))
+  (fact "one to ack moves success over"
+    (let [[ack1 ack2] (repeatedly 2 ack-chan)]
+      (pipe-ack ack1 ack2)
+      (ack-success ack1)
+      (<!! ack2) => nil))
+  (fact "one to ack moves error over"
+    (let [[ack1 ack2] (repeatedly 2 ack-chan)]
+      (pipe-ack ack1 ack2)
+      (nack-error ack1 "error")
+      (<!! ack2) => "error"
+      (<!! ack2) => nil))
+  (fact "two to acks moves success over"
+    (let [[ack1 ack2 ack3] (repeatedly 3 ack-chan)]
+      (ack-success ack1)
+      (pipe-ack ack1 ack2 ack3)
+      (<!! ack2) => nil
+      (<!! ack3) => nil))
+  (fact "two to acks moves error over"
+    (let [[ack1 ack2 ack3] (repeatedly 3 ack-chan)]
+      (nack-error ack1 "error")
+      (pipe-ack ack1 ack2 ack3)
+      (<!! ack2) => "error"
+      (<!! ack3) => "error"
+      (<!! ack2) => nil
+      (<!! ack3) => nil)))
